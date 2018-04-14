@@ -12,45 +12,10 @@
 # libraries
 library(tidyverse)
 library(stringr)
+library(ggplot2)
+library(cowplot)
 
 output <- ('/Users/nichtremper/Google Drive/data_work/housing/output')
-
-# functions
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])
-    
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
 
 # load data, keep DC data, save that to repo, remove all_evict
 all_evict <- read_csv('/Users/nichtremper/Google Drive/Data Sets/desmond_eviction.csv')
@@ -176,58 +141,106 @@ ggsave('eviction_race.png', plot = last_plot(),
 ## now, mult plots by income & race
 dc_2016_block_group1 <- dc_2016_block_group %>% filter(income_quartile == 1)
 g1 <- dc_2016_block_group1 %>%
-  ggplot(aes(x = eviction_rate)) +
+  ggplot(aes(x = eviction_rate, y = (..count../sum(..count..)) * 100)) +
     geom_freqpoly(breaks = seq(0, max(dc_2016_block_group1$eviction_rate), by = 1),
                   aes(color = factor(dc_2016_block_group1$maj_white_text))) +
-  theme(legend.position = 'none') +
+  theme(legend.position = 'right') +
+  ylim(0, 50) +
+  xlim(0, 15) +
   labs(
-    title = "Median income quartile: 25%",
-    y = "Number of census block groups",
     x = "",
-    color = "Majority race in block group"
+    y = "",
+    color = 'Race in block group'
+  )
+
+### subset the legend
+legend <- get_legend(g1)
+
+### now, recast without legend
+
+y.size <- 1
+x.size <- 1
+
+g1 <- dc_2016_block_group1 %>%
+  ggplot(aes(x = eviction_rate, y = (..count../sum(..count..)) * 100)) +
+  geom_freqpoly(breaks = seq(0, max(dc_2016_block_group1$eviction_rate), by = 1),
+                aes(color = factor(dc_2016_block_group1$maj_white_text))) +
+  background_grid(major = c('x')) +
+  theme(legend.position = 'none',
+        axis.title.y = element_text(size = rel(y.size), angle = 90)) +
+  ylim(0, 50) +
+  xlim(0, 15) +
+  labs(
+    x = "",
+    y = "Percent of block groups"
   )
 
 dc_2016_block_group2 <- dc_2016_block_group %>% filter(income_quartile == 2)
 g2 <- dc_2016_block_group2 %>%
-  ggplot(aes(x = eviction_rate)) +
+  ggplot(aes(x = eviction_rate, y = (..count../sum(..count..)) * 100)) +
   geom_freqpoly(breaks = seq(0, max(dc_2016_block_group2$eviction_rate), by = 1),
                 aes(color = factor(dc_2016_block_group2$maj_white_text))) +
-  theme(legend.position = 'none') +
+  background_grid(major = c('x')) +
+  theme(legend.position = 'none') + 
+  ylim(0, 50) +
+  xlim(0, 15) +
   labs(
-    title = "Median income quartile: 50%",
-    y = "",
-    x = ""
+    x = "",
+    y = ""
   )
 
 dc_2016_block_group3 <- dc_2016_block_group %>% filter(income_quartile == 3)
 g3 <- dc_2016_block_group3 %>%
-  ggplot(aes(x = eviction_rate)) +
+  ggplot(aes(x = eviction_rate, y = (..count../sum(..count..)) * 100)) +
   geom_freqpoly(breaks = seq(0, max(dc_2016_block_group3$eviction_rate), by = 1),
                 aes(color = factor(dc_2016_block_group3$maj_white_text))) +
-  theme(legend.position = 'none') +
+  background_grid(major = c('x')) +
+  theme(legend.position = 'none',
+        axis.title.y = element_text(size = rel(y.size), angle = 90),
+        axis.title.x = element_text(size = rel(x.size), angle = 0)) +
+  ylim(0, 50) +
+  xlim(0, 15) +
   labs(
-    title = "Median income quartile: 75%",
-    y = "Number of census block groups",
-    x = "Eviction rate (percent)"
+    x = "Eviction rate",
+    y = "Percent of block groups"
   ) 
 
 dc_2016_block_group4 <- dc_2016_block_group %>% filter(income_quartile == 4)
 g4 <- dc_2016_block_group4 %>%
-  ggplot(aes(x = eviction_rate)) +
+  ggplot(aes(x = eviction_rate, y = (..count../sum(..count..)) * 100)) +
   geom_freqpoly(breaks = seq(0, max(dc_2016_block_group4$eviction_rate), by = 1),
                 aes(color = factor(dc_2016_block_group4$maj_white_text))) +
-  theme(legend.position = 'none') +
+  background_grid(major = c('x')) +
+  theme(legend.position = 'none',
+        axis.title.x = element_text(size = rel(x.size), angle = 0)) +
+  ylim(0, 50) +
+  xlim(0, 15) +
   labs(
-    title = "Median income quartile: 100%",
-    y = "",
-    x = "Eviction rate (percent)",
-    color = "Majority race in block group"#,
-    #caption = paste("Source: Matthew Desmond's Eviction Lab \n",
-     #               "www.evictionlab.org")
+    x = "Eviction rate",
+    y = ""
   ) 
 
-multiplot(g1, g3, g2, g4, cols = 2)
+# combine the graphs
 
-## Next step:
-### 1) clean up grouped charts
+title <- ggdraw() +
+  draw_label("Eviction rate in block group by median household income quartile:
+             Washington, DC", fontface = 'bold')
 
+note <- ggdraw() +
+  draw_label("Data source: www.evictionlab.org", 
+             y = .1, x = 0.25,  size = 12)
+
+(graphs <- plot_grid(g1, g2, g3, g4, legend, note,
+                    labels = c('First quartile', 'Second quartile',
+                               'Third quartile', 'Fourth quartile'),
+                    label_fontface = "plain",
+                    nrow = 3, label_size = 10, align = 'h',
+                    axis = 1, hjust = -1))
+
+plot_grid(
+  title, graphs, 
+  nrow = 2, 
+  rel_heights = c(.1, 1))
+
+ggsave('eviction_rate_DC.png', plot = ggplot2::last_plot(), 
+       width = 10, height = 10, units = c("in"), dpi = 400)
