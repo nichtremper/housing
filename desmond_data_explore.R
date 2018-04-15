@@ -224,7 +224,7 @@ g4 <- dc_2016_block_group4 %>%
 
 title <- ggdraw() +
   draw_label("Eviction rate in block group by median household income quartile:
-             Washington, DC", fontface = 'bold')
+             Washington, DC 2016", fontface = 'bold')
 
 note <- ggdraw() +
   draw_label("Data source: www.evictionlab.org", 
