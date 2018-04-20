@@ -11,9 +11,11 @@
 
 # libraries
 library(tidyverse)
+library(modelr)
 library(stringr)
 library(ggplot2)
 library(cowplot)
+library(pushoverr)
 
 output <- ('/Users/nichtremper/Google Drive/data_work/housing/output')
 
@@ -244,3 +246,65 @@ plot_grid(
 
 ggsave('eviction_rate_DC.png', plot = ggplot2::last_plot(), 
        width = 10, height = 10, units = c("in"), dpi = 400)
+
+# Modeling ---------------------------------------------------------------
+
+dc_2016_block_group <- dc_2016_block_group %>%
+  mutate(maj_white = ifelse(pct_white >= 50, 1, 0))
+ 
+# first, look at just the relationship between eviction rate and rent
+## scatter plot
+dc_2016_block_group %>%
+  ggplot(aes(x = median_gross_rent, y = eviction_rate)) +
+    geom_point()
+
+## linear model
+mod_1 <- lm(eviction_rate ~ median_gross_rent, data = dc_2016_block_group)
+
+## vizualize the predictions
+### create grid
+grid <- dc_2016_block_group %>%
+  data_grid(median_gross_rent)
+grid
+
+### now add predictions of eviction rate from mod_1
+grid <- grid %>%
+  add_predictions(mod_1)
+grid
+
+### visualize predictions
+ggplot(dc_2016_block_group, aes(x = median_gross_rent)) +
+  geom_point(aes(y = eviction_rate, color = maj_white)) +
+  geom_line(aes(y = pred), data = grid, color = "red")
+
+### now look at residuals
+dc_2016_block_group <- dc_2016_block_group %>%
+  add_residuals(mod_1) %>%
+  rename(resid1 = resid)
+
+### look at the spread of residuals
+ggplot(dc_2016_block_group, aes(x = resid1)) +
+  geom_freqpoly(binwidth = 1)
+
+### plot residuals and median rent 
+ggplot(dc_2016_block_group, aes(x = median_gross_rent, y = resid1)) +
+  geom_ref_line(h = 0) +
+  geom_point()
+
+## linear model, controlling for maj white
+mod_2 <- lm(eviction_rate ~ median_gross_rent + maj_white,
+            data = dc_2016_block_group)
+
+dc_2016_block_group <- dc_2016_block_group %>%
+  add_residuals(mod_2) %>%
+  rename(resid2 = resid)
+
+### plot residuals and median rent 
+ggplot(dc_2016_block_group, aes(x = median_gross_rent, y = resid2)) +
+  geom_ref_line(h = 0) +
+  geom_point()
+
+### visualize
+ggplot(dc_2016_block_group, aes(x = median_gross_rent)) +
+  geom_point(aes(y = eviction_rate, color = maj_white)) +
+  geom_line(aes(y = pred), data = grid2, color = "red")
